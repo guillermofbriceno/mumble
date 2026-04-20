@@ -160,6 +160,16 @@ public slots:
 							std::shared_ptr< api_promise_t > promise);
 	void playSample_v_1_2_x(mumble_plugin_id_t callerID, const char *samplePath, float volume,
 							std::shared_ptr< api_promise_t > promise);
+	void getUserMuteState_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID,
+								  mumble_mute_state_t *muteState, std::shared_ptr< api_promise_t > promise);
+	void getUserDeafState_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID,
+								  mumble_deaf_state_t *deafState, std::shared_ptr< api_promise_t > promise);
+	void getUserLocalVolumeAdjustment_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+											  mumble_userid_t userID, float *volumeAdjustment,
+											  std::shared_ptr< api_promise_t > promise);
+	void setUserLocalVolumeAdjustment_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+											  mumble_userid_t userID, float volumeAdjustment,
+											  std::shared_ptr< api_promise_t > promise);
 
 
 private:
@@ -173,6 +183,9 @@ MumbleAPI_v_1_0_x getMumbleAPI_v_1_0_x();
 
 /// @returns The Mumble API struct (v1.2.x)
 MumbleAPI_v_1_2_x getMumbleAPI_v_1_2_x();
+
+/// @returns The Mumble API struct (v1.3.x)
+MumbleAPI_v_1_3_x getMumbleAPI_v_1_3_x();
 
 /// Converts from the Qt key-encoding to the API's key encoding.
 ///
@@ -205,6 +218,8 @@ Q_DECLARE_METATYPE(mumble_settings_key_t)
 Q_DECLARE_METATYPE(mumble_settings_key_t *)
 Q_DECLARE_METATYPE(mumble_transmission_mode_t)
 Q_DECLARE_METATYPE(mumble_transmission_mode_t *)
+Q_DECLARE_METATYPE(mumble_mute_state_t *)
+Q_DECLARE_METATYPE(mumble_deaf_state_t *)
 Q_DECLARE_METATYPE(std::shared_ptr< API::api_promise_t >)
 
 //////////////////////////////////////////////////////////////

@@ -55,6 +55,8 @@ struct MumblePluginFunctions {
 	decltype(&mumble_onChannelEntered) onChannelEntered;
 	decltype(&mumble_onChannelExited) onChannelExited;
 	decltype(&mumble_onUserTalkingStateChanged) onUserTalkingStateChanged;
+	decltype(&mumble_onUserMuteStateChanged) onUserMuteStateChanged;
+	decltype(&mumble_onUserDeafStateChanged) onUserDeafStateChanged;
 	decltype(&mumble_onReceiveData) onReceiveData;
 	decltype(&mumble_onAudioInput) onAudioInput;
 	decltype(&mumble_onAudioSourceFetched) onAudioSourceFetched;
@@ -277,6 +279,20 @@ protected:
 	/// @param talkingState The new talking state of the user
 	virtual void onUserTalkingStateChanged(mumble_connection_t connection, mumble_userid_t userID,
 										   mumble_talking_state_t talkingState) const;
+	/// Called to indicate that a user's mute state has changed
+	///
+	/// @param connection An object used to identify the current connection
+	/// @param userID The ID of the user whose mute state changed
+	/// @param muteState Bitmask of Mumble_MuteState flags
+	virtual void onUserMuteStateChanged(mumble_connection_t connection, mumble_userid_t userID,
+										mumble_mute_state_t muteState) const;
+	/// Called to indicate that a user's deaf state has changed
+	///
+	/// @param connection An object used to identify the current connection
+	/// @param userID The ID of the user whose deaf state changed
+	/// @param deafState Bitmask of Mumble_DeafState flags
+	virtual void onUserDeafStateChanged(mumble_connection_t connection, mumble_userid_t userID,
+										mumble_deaf_state_t deafState) const;
 	/// Called to indicate that a data packet has been received
 	///
 	/// @param connection An object used to identify the current connection

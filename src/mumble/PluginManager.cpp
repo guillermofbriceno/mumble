@@ -756,6 +756,54 @@ void PluginManager::on_userTalkingStateChanged() const {
 	}
 }
 
+mumble_mute_state_t PluginManager::buildMuteState(const ClientUser &user) {
+	mumble_mute_state_t state = MUMBLE_MS_NONE;
+	if (user.bMute)
+		state = static_cast< mumble_mute_state_t >(state | MUMBLE_MS_MUTED);
+	if (user.bSelfMute)
+		state = static_cast< mumble_mute_state_t >(state | MUMBLE_MS_SELF_MUTED);
+	if (user.bSuppress)
+		state = static_cast< mumble_mute_state_t >(state | MUMBLE_MS_SUPPRESSED);
+	if (user.bLocalMute)
+		state = static_cast< mumble_mute_state_t >(state | MUMBLE_MS_LOCAL_MUTE);
+	if (user.bLocalIgnore)
+		state = static_cast< mumble_mute_state_t >(state | MUMBLE_MS_LOCAL_IGNORE);
+	return state;
+}
+
+mumble_deaf_state_t PluginManager::buildDeafState(const ClientUser &user) {
+	mumble_deaf_state_t state = MUMBLE_DS_NONE;
+	if (user.bDeaf)
+		state = static_cast< mumble_deaf_state_t >(state | MUMBLE_DS_DEAFENED);
+	if (user.bSelfDeaf)
+		state = static_cast< mumble_deaf_state_t >(state | MUMBLE_DS_SELF_DEAFENED);
+	return state;
+}
+
+void PluginManager::on_userMuteDeafStateChanged() const {
+	const ClientUser *user = qobject_cast< ClientUser * >(QObject::sender());
+#ifdef MUMBLE_PLUGIN_CALLBACK_DEBUG
+	if (user) {
+		qDebug() << "PluginManager: User" << user->qsName << "mute/deaf state changed";
+	} else {
+		qCritical() << "PluginManager: Unable to identify ClientUser";
+	}
+#endif
+
+	if (user) {
+		const mumble_connection_t connectionID = Global::get().sh->getConnectionID();
+		const mumble_mute_state_t muteState    = buildMuteState(*user);
+		const mumble_deaf_state_t deafState    = buildDeafState(*user);
+
+		foreachPlugin([user, connectionID, muteState, deafState](Plugin &plugin) {
+			if (plugin.isLoaded()) {
+				plugin.onUserMuteStateChanged(connectionID, user->uiSession, muteState);
+				plugin.onUserDeafStateChanged(connectionID, user->uiSession, deafState);
+			}
+		});
+	}
+}
+
 void PluginManager::on_audioInput(short *inputPCM, unsigned int sampleCount, unsigned int channelCount,
 								  unsigned int sampleRate, bool isSpeech) const {
 #ifdef MUMBLE_PLUGIN_CALLBACK_DEBUG

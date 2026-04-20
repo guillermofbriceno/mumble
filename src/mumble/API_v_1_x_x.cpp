@@ -1647,6 +1647,142 @@ void MumbleAPI::playSample_v_1_2_x(mumble_plugin_id_t callerID, const char *samp
 	}
 }
 
+void MumbleAPI::getUserMuteState_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+										 mumble_userid_t userID, mumble_mute_state_t *muteState,
+										 std::shared_ptr< api_promise_t > promise) {
+	if (QThread::currentThread() != thread()) {
+		QMetaObject::invokeMethod(this, "getUserMuteState_v_1_3_x", Qt::QueuedConnection,
+								  Q_ARG(mumble_plugin_id_t, callerID), Q_ARG(mumble_connection_t, connection),
+								  Q_ARG(mumble_userid_t, userID), Q_ARG(mumble_mute_state_t *, muteState),
+								  Q_ARG(std::shared_ptr< api_promise_t >, promise));
+
+		return;
+	}
+
+	api_promise_t::lock_guard_t guard = promise->lock();
+	if (promise->isCancelled()) {
+		return;
+	}
+
+	VERIFY_PLUGIN_ID(callerID);
+
+	VERIFY_CONNECTION(connection);
+	ENSURE_CONNECTION_SYNCHRONIZED(connection);
+
+	const ClientUser *user = ClientUser::get(userID);
+
+	if (!user) {
+		EXIT_WITH(MUMBLE_EC_USER_NOT_FOUND);
+	}
+
+	*muteState = PluginManager::buildMuteState(*user);
+
+	EXIT_WITH(MUMBLE_STATUS_OK);
+}
+
+void MumbleAPI::getUserDeafState_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+										 mumble_userid_t userID, mumble_deaf_state_t *deafState,
+										 std::shared_ptr< api_promise_t > promise) {
+	if (QThread::currentThread() != thread()) {
+		QMetaObject::invokeMethod(this, "getUserDeafState_v_1_3_x", Qt::QueuedConnection,
+								  Q_ARG(mumble_plugin_id_t, callerID), Q_ARG(mumble_connection_t, connection),
+								  Q_ARG(mumble_userid_t, userID), Q_ARG(mumble_deaf_state_t *, deafState),
+								  Q_ARG(std::shared_ptr< api_promise_t >, promise));
+
+		return;
+	}
+
+	api_promise_t::lock_guard_t guard = promise->lock();
+	if (promise->isCancelled()) {
+		return;
+	}
+
+	VERIFY_PLUGIN_ID(callerID);
+
+	VERIFY_CONNECTION(connection);
+	ENSURE_CONNECTION_SYNCHRONIZED(connection);
+
+	const ClientUser *user = ClientUser::get(userID);
+
+	if (!user) {
+		EXIT_WITH(MUMBLE_EC_USER_NOT_FOUND);
+	}
+
+	*deafState = PluginManager::buildDeafState(*user);
+
+	EXIT_WITH(MUMBLE_STATUS_OK);
+}
+
+void MumbleAPI::getUserLocalVolumeAdjustment_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+													 mumble_userid_t userID, float *volumeAdjustment,
+													 std::shared_ptr< api_promise_t > promise) {
+	if (QThread::currentThread() != thread()) {
+		QMetaObject::invokeMethod(this, "getUserLocalVolumeAdjustment_v_1_3_x", Qt::QueuedConnection,
+								  Q_ARG(mumble_plugin_id_t, callerID), Q_ARG(mumble_connection_t, connection),
+								  Q_ARG(mumble_userid_t, userID), Q_ARG(float *, volumeAdjustment),
+								  Q_ARG(std::shared_ptr< api_promise_t >, promise));
+
+		return;
+	}
+
+	api_promise_t::lock_guard_t guard = promise->lock();
+	if (promise->isCancelled()) {
+		return;
+	}
+
+	VERIFY_PLUGIN_ID(callerID);
+
+	VERIFY_CONNECTION(connection);
+	ENSURE_CONNECTION_SYNCHRONIZED(connection);
+
+	const ClientUser *user = ClientUser::get(userID);
+
+	if (!user) {
+		EXIT_WITH(MUMBLE_EC_USER_NOT_FOUND);
+	}
+
+	*volumeAdjustment = user->getLocalVolumeAdjustments();
+
+	EXIT_WITH(MUMBLE_STATUS_OK);
+}
+
+void MumbleAPI::setUserLocalVolumeAdjustment_v_1_3_x(mumble_plugin_id_t callerID, mumble_connection_t connection,
+													 mumble_userid_t userID, float volumeAdjustment,
+													 std::shared_ptr< api_promise_t > promise) {
+	if (QThread::currentThread() != thread()) {
+		QMetaObject::invokeMethod(this, "setUserLocalVolumeAdjustment_v_1_3_x", Qt::QueuedConnection,
+								  Q_ARG(mumble_plugin_id_t, callerID), Q_ARG(mumble_connection_t, connection),
+								  Q_ARG(mumble_userid_t, userID), Q_ARG(float, volumeAdjustment),
+								  Q_ARG(std::shared_ptr< api_promise_t >, promise));
+
+		return;
+	}
+
+	api_promise_t::lock_guard_t guard = promise->lock();
+	if (promise->isCancelled()) {
+		return;
+	}
+
+	VERIFY_PLUGIN_ID(callerID);
+
+	VERIFY_CONNECTION(connection);
+	ENSURE_CONNECTION_SYNCHRONIZED(connection);
+
+	ClientUser *user = ClientUser::get(userID);
+
+	if (!user) {
+		EXIT_WITH(MUMBLE_EC_USER_NOT_FOUND);
+	}
+
+	user->setLocalVolumeAdjustment(volumeAdjustment);
+
+	if (!user->qsHash.isEmpty()) {
+		Global::get().db->setUserLocalVolume(user->qsHash, volumeAdjustment);
+	}
+
+	EXIT_WITH(MUMBLE_STATUS_OK);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////// C FUNCTION WRAPPERS FOR USE IN API STRUCT ///////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1926,6 +2062,34 @@ C_WRAPPER(playSample_v_1_2_x)
 #undef TYPED_ARGS
 #undef ARG_NAMES
 
+#define TYPED_ARGS \
+	mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID, mumble_mute_state_t *muteState
+#define ARG_NAMES callerID, connection, userID, muteState
+C_WRAPPER(getUserMuteState_v_1_3_x)
+#undef TYPED_ARGS
+#undef ARG_NAMES
+
+#define TYPED_ARGS \
+	mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID, mumble_deaf_state_t *deafState
+#define ARG_NAMES callerID, connection, userID, deafState
+C_WRAPPER(getUserDeafState_v_1_3_x)
+#undef TYPED_ARGS
+#undef ARG_NAMES
+
+#define TYPED_ARGS \
+	mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID, float *volumeAdjustment
+#define ARG_NAMES callerID, connection, userID, volumeAdjustment
+C_WRAPPER(getUserLocalVolumeAdjustment_v_1_3_x)
+#undef TYPED_ARGS
+#undef ARG_NAMES
+
+#define TYPED_ARGS \
+	mumble_plugin_id_t callerID, mumble_connection_t connection, mumble_userid_t userID, float volumeAdjustment
+#define ARG_NAMES callerID, connection, userID, volumeAdjustment
+C_WRAPPER(setUserLocalVolumeAdjustment_v_1_3_x)
+#undef TYPED_ARGS
+#undef ARG_NAMES
+
 
 #undef C_WRAPPER
 
@@ -2014,6 +2178,51 @@ MumbleAPI_v_1_2_x getMumbleAPI_v_1_2_x() {
 			 sendData_v_1_0_x,
 			 log_v_1_0_x,
 			 playSample_v_1_2_x };
+}
+
+MumbleAPI_v_1_3_x getMumbleAPI_v_1_3_x() {
+	return { freeMemory_v_1_0_x,
+			 getActiveServerConnection_v_1_0_x,
+			 isConnectionSynchronized_v_1_0_x,
+			 getLocalUserID_v_1_0_x,
+			 getUserName_v_1_0_x,
+			 getChannelName_v_1_0_x,
+			 getAllUsers_v_1_0_x,
+			 getAllChannels_v_1_0_x,
+			 getChannelOfUser_v_1_0_x,
+			 getUsersInChannel_v_1_0_x,
+			 getLocalUserTransmissionMode_v_1_0_x,
+			 isUserLocallyMuted_v_1_0_x,
+			 isLocalUserMuted_v_1_0_x,
+			 isLocalUserDeafened_v_1_0_x,
+			 getUserHash_v_1_0_x,
+			 getServerHash_v_1_0_x,
+			 getUserComment_v_1_0_x,
+			 getChannelDescription_v_1_0_x,
+			 requestLocalUserTransmissionMode_v_1_0_x,
+			 requestUserMove_v_1_0_x,
+			 requestMicrophoneActivationOverwrite_v_1_0_x,
+			 requestLocalMute_v_1_0_x,
+			 requestLocalUserMute_v_1_0_x,
+			 requestLocalUserDeaf_v_1_0_x,
+			 requestSetLocalUserComment_v_1_0_x,
+			 findUserByName_v_1_0_x,
+			 findChannelByName_v_1_0_x,
+			 getMumbleSetting_bool_v_1_0_x,
+			 getMumbleSetting_int_v_1_0_x,
+			 getMumbleSetting_double_v_1_0_x,
+			 getMumbleSetting_string_v_1_0_x,
+			 setMumbleSetting_bool_v_1_0_x,
+			 setMumbleSetting_int_v_1_0_x,
+			 setMumbleSetting_double_v_1_0_x,
+			 setMumbleSetting_string_v_1_0_x,
+			 sendData_v_1_0_x,
+			 log_v_1_0_x,
+			 playSample_v_1_2_x,
+			 getUserMuteState_v_1_3_x,
+			 getUserDeafState_v_1_3_x,
+			 getUserLocalVolumeAdjustment_v_1_3_x,
+			 setUserLocalVolumeAdjustment_v_1_3_x };
 }
 
 #define MAP(qtName, apiName) \

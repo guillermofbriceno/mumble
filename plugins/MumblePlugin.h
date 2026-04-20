@@ -43,7 +43,7 @@
 #		define MUMBLE_PLUGIN_API_MAJOR_MACRO 1
 #	endif
 #	ifndef MUMBLE_PLUGIN_API_MINOR_MACRO
-#		define MUMBLE_PLUGIN_API_MINOR_MACRO 2
+#		define MUMBLE_PLUGIN_API_MINOR_MACRO 3
 #	endif
 #	ifndef MUMBLE_PLUGIN_API_PATCH_MACRO
 #		define MUMBLE_PLUGIN_API_PATCH_MACRO 0
@@ -192,6 +192,29 @@ enum Mumble_TalkingState {
 	MUMBLE_TS_WHISPERING,
 	MUMBLE_TS_SHOUTING,
 	MUMBLE_TS_TALKING_MUTED,
+};
+
+/**
+ * This enum's values represent the different ways a user can be muted.
+ * They are meant to be or'ed together to represent the total mute state of a user.
+ */
+enum Mumble_MuteState {
+	MUMBLE_MS_NONE         = 0,
+	MUMBLE_MS_MUTED        = 1 << 0,
+	MUMBLE_MS_SELF_MUTED   = 1 << 1,
+	MUMBLE_MS_SUPPRESSED   = 1 << 2,
+	MUMBLE_MS_LOCAL_MUTE   = 1 << 3,
+	MUMBLE_MS_LOCAL_IGNORE = 1 << 4,
+};
+
+/**
+ * This enum's values represent the different ways a user can be deafened.
+ * They are meant to be or'ed together to represent the total deaf state of a user.
+ */
+enum Mumble_DeafState {
+	MUMBLE_DS_NONE          = 0,
+	MUMBLE_DS_DEAFENED      = 1 << 0,
+	MUMBLE_DS_SELF_DEAFENED = 1 << 1,
 };
 
 /**
@@ -462,6 +485,14 @@ MUMBLE_EXTERN_C_END
  * Typedef for the type of a talking state
  */
 typedef enum Mumble_TalkingState mumble_talking_state_t;
+/**
+ * Typedef for the type of a mute state
+ */
+typedef enum Mumble_MuteState mumble_mute_state_t;
+/**
+ * Typedef for the type of a deaf state
+ */
+typedef enum Mumble_DeafState mumble_deaf_state_t;
 /**
  * Typedef for the type of a transmission mode
  */
@@ -995,6 +1026,26 @@ MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onChannelExite
  */
 MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onUserTalkingStateChanged(
 	mumble_connection_t connection, mumble_userid_t userID, mumble_talking_state_t talkingState);
+
+/**
+ * Called when any user's mute state changes.
+ *
+ * @param connection The ID of the server-connection this event is connected to
+ * @param userID The ID of the user whose mute state has changed
+ * @param muteState A bitmask of Mumble_MuteState flags representing the user's current mute state
+ */
+MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onUserMuteStateChanged(
+	mumble_connection_t connection, mumble_userid_t userID, mumble_mute_state_t muteState);
+
+/**
+ * Called when any user's deaf state changes.
+ *
+ * @param connection The ID of the server-connection this event is connected to
+ * @param userID The ID of the user whose deaf state has changed
+ * @param deafState A bitmask of Mumble_DeafState flags representing the user's current deaf state
+ */
+MUMBLE_PLUGIN_EXPORT void MUMBLE_PLUGIN_CALLING_CONVENTION mumble_onUserDeafStateChanged(
+	mumble_connection_t connection, mumble_userid_t userID, mumble_deaf_state_t deafState);
 
 /**
  * Called whenever there is audio input.
@@ -1807,6 +1858,71 @@ struct MUMBLE_API_STRUCT_NAME {
 	 */
 	mumble_error_t(MUMBLE_PLUGIN_CALLING_CONVENTION *playSample)(mumble_plugin_id_t callerID,
 																 const char *samplePath PARAM_v1_2(float volume));
+
+#	if SELECTED_API_VERSION >= MUMBLE_PLUGIN_VERSION_CHECK(1, 3, 0)
+	/**
+	 * Gets the mute state of the given user as a bitmask of mumble_mute_state_t flags.
+	 *
+	 * @param callerID The ID of the plugin calling this function
+	 * @param connection The ID of the server-connection to use as a context
+	 * @param userID The ID of the user to check
+	 * @param[out] muteState A pointer to where the mute state bitmask shall be written
+	 * @returns The error code. If everything went well, STATUS_OK will be returned. Only then the passed pointer
+	 * may be accessed
+	 */
+	mumble_error_t(MUMBLE_PLUGIN_CALLING_CONVENTION *getUserMuteState)(mumble_plugin_id_t callerID,
+																	   mumble_connection_t connection,
+																	   mumble_userid_t userID,
+																	   mumble_mute_state_t *muteState);
+
+	/**
+	 * Gets the deaf state of the given user as a bitmask of mumble_deaf_state_t flags.
+	 *
+	 * @param callerID The ID of the plugin calling this function
+	 * @param connection The ID of the server-connection to use as a context
+	 * @param userID The ID of the user to check
+	 * @param[out] deafState A pointer to where the deaf state bitmask shall be written
+	 * @returns The error code. If everything went well, STATUS_OK will be returned. Only then the passed pointer
+	 * may be accessed
+	 */
+	mumble_error_t(MUMBLE_PLUGIN_CALLING_CONVENTION *getUserDeafState)(mumble_plugin_id_t callerID,
+																	   mumble_connection_t connection,
+																	   mumble_userid_t userID,
+																	   mumble_deaf_state_t *deafState);
+
+	/**
+	 * Gets the local volume adjustment for the given user. The adjustment is a multiplicative factor
+	 * (1.0 = no change, 2.0 = doubled, 0.5 = halved). This is the same value controlled by the
+	 * per-user volume slider in the client UI.
+	 *
+	 * @param callerID The ID of the plugin calling this function
+	 * @param connection The ID of the server-connection to use as a context
+	 * @param userID The ID of the user to check
+	 * @param[out] volumeAdjustment A pointer to where the volume adjustment factor shall be written
+	 * @returns The error code. If everything went well, STATUS_OK will be returned. Only then the passed pointer
+	 * may be accessed
+	 */
+	mumble_error_t(MUMBLE_PLUGIN_CALLING_CONVENTION *getUserLocalVolumeAdjustment)(mumble_plugin_id_t callerID,
+																				   mumble_connection_t connection,
+																				   mumble_userid_t userID,
+																				   float *volumeAdjustment);
+
+	/**
+	 * Sets the local volume adjustment for the given user. The adjustment is a multiplicative factor
+	 * (1.0 = no change, 2.0 = doubled, 0.5 = halved). This is the same value controlled by the
+	 * per-user volume slider in the client UI. The value is persisted to the database.
+	 *
+	 * @param callerID The ID of the plugin calling this function
+	 * @param connection The ID of the server-connection to use as a context
+	 * @param userID The ID of the user whose volume adjustment shall be set
+	 * @param volumeAdjustment The volume adjustment factor to set
+	 * @returns The error code. If everything went well, STATUS_OK will be returned.
+	 */
+	mumble_error_t(MUMBLE_PLUGIN_CALLING_CONVENTION *setUserLocalVolumeAdjustment)(mumble_plugin_id_t callerID,
+																				   mumble_connection_t connection,
+																				   mumble_userid_t userID,
+																				   float volumeAdjustment);
+#	endif
 };
 
 #	ifdef MUMBLE_PLUGIN_CREATE_MUMBLE_API_TYPEDEF

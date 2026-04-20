@@ -152,6 +152,12 @@ void Plugin::resolveFunctionPointers() {
 		m_pluginFnc.onUserTalkingStateChanged =
 			reinterpret_cast< decltype(MumblePluginFunctions::onUserTalkingStateChanged) >(
 				m_lib.resolve("mumble_onUserTalkingStateChanged"));
+		m_pluginFnc.onUserMuteStateChanged =
+			reinterpret_cast< decltype(MumblePluginFunctions::onUserMuteStateChanged) >(
+				m_lib.resolve("mumble_onUserMuteStateChanged"));
+		m_pluginFnc.onUserDeafStateChanged =
+			reinterpret_cast< decltype(MumblePluginFunctions::onUserDeafStateChanged) >(
+				m_lib.resolve("mumble_onUserDeafStateChanged"));
 		m_pluginFnc.onReceiveData =
 			reinterpret_cast< decltype(MumblePluginFunctions::onReceiveData) >(m_lib.resolve("mumble_onReceiveData"));
 		m_pluginFnc.onAudioInput =
@@ -328,6 +334,9 @@ mumble_error_t Plugin::init() {
 		registerAPIFunctions(&api);
 	} else if (apiVersion >= mumble_version_t({ 1, 2, 0 }) && apiVersion < mumble_version_t({ 1, 3, 0 })) {
 		MumbleAPI_v_1_2_x api = API::getMumbleAPI_v_1_2_x();
+		registerAPIFunctions(&api);
+	} else if (apiVersion >= mumble_version_t({ 1, 3, 0 }) && apiVersion < mumble_version_t({ 1, 4, 0 })) {
+		MumbleAPI_v_1_3_x api = API::getMumbleAPI_v_1_3_x();
 		registerAPIFunctions(&api);
 	} else {
 		// The API version could not be obtained -> this is an invalid plugin that shouldn't have been loaded in the
@@ -590,6 +599,24 @@ void Plugin::onUserTalkingStateChanged(mumble_connection_t connection, mumble_us
 
 	if (m_pluginFnc.onUserTalkingStateChanged) {
 		m_pluginFnc.onUserTalkingStateChanged(connection, userID, talkingState);
+	}
+}
+
+void Plugin::onUserMuteStateChanged(mumble_connection_t connection, mumble_userid_t userID,
+									mumble_mute_state_t muteState) const {
+	assertPluginLoaded(this);
+
+	if (m_pluginFnc.onUserMuteStateChanged) {
+		m_pluginFnc.onUserMuteStateChanged(connection, userID, muteState);
+	}
+}
+
+void Plugin::onUserDeafStateChanged(mumble_connection_t connection, mumble_userid_t userID,
+									mumble_deaf_state_t deafState) const {
+	assertPluginLoaded(this);
+
+	if (m_pluginFnc.onUserDeafStateChanged) {
+		m_pluginFnc.onUserDeafStateChanged(connection, userID, deafState);
 	}
 }
 

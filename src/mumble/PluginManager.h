@@ -104,6 +104,17 @@ public:
 	// How often the manager should check for available positional data plugins
 	static constexpr int POSITIONAL_DATA_CHECK_INTERVAL = 1000;
 
+	/// Builds a mute state bitmask from the given user's current state
+	///
+	/// @param user The user to query
+	/// @returns The mute state as a bitmask of Mumble_MuteState flags
+	static mumble_mute_state_t buildMuteState(const ClientUser &user);
+	/// Builds a deaf state bitmask from the given user's current state
+	///
+	/// @param user The user to query
+	/// @returns The deaf state as a bitmask of Mumble_DeafState flags
+	static mumble_deaf_state_t buildDeafState(const ClientUser &user);
+
 	/// Constructor
 	///
 	/// @param additionalSearchPaths A pointer to a set of additional search paths or nullptr if no additional
@@ -203,6 +214,9 @@ public slots:
 	/// Slot that gets called when the local client changes its talking state. It will delegate it to the respective
 	/// plugin callback.
 	void on_userTalkingStateChanged() const;
+	/// Slot that gets called when a user's mute or deaf state changes. It will delegate it to the respective plugin
+	/// callbacks.
+	void on_userMuteDeafStateChanged() const;
 	/// Slot that gets called when the local client receives audio input. It will delegate it to the respective plugin
 	/// callback.
 	///
