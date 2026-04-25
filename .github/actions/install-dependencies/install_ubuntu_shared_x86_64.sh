@@ -73,13 +73,17 @@ else
 fi
 
 # MySQL and PostgreSQL are pre-installed on GitHub-hosted runners.
-# Set them up for the Mumble tests
-echo -e "[mysqld]\nlog-bin-trust-function-creators = 1" | sudo tee -a /etc/mysql/my.cnf
+# Set them up for the Mumble tests (skip if systemd is not available, e.g. in Docker/act)
+if pidof systemd > /dev/null 2>&1; then
+	echo -e "[mysqld]\nlog-bin-trust-function-creators = 1" | sudo tee -a /etc/mysql/my.cnf
 
-sudo systemctl enable mysql.service
-sudo systemctl start mysql.service
+	sudo systemctl enable mysql.service
+	sudo systemctl start mysql.service
 
-sudo systemctl enable postgresql.service
-sudo systemctl start postgresql.service
+	sudo systemctl enable postgresql.service
+	sudo systemctl start postgresql.service
 
-configure_database_tables "mysql" "postgresql"
+	configure_database_tables "mysql" "postgresql"
+else
+	echo "systemd not available — skipping database setup (tests requiring databases will be skipped)"
+fi
