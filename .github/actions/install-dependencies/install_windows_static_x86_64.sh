@@ -35,6 +35,6 @@ mysqld --initialize-insecure --console
 powershell -Command "Start-Process mysqld"
 
 # Give the MySQL daemon some time to start up
-sleep 5
+sleep 15
 
 configure_database_tables "mysql"
