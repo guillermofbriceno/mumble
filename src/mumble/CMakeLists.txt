@@ -623,6 +623,11 @@ if(WIN32)
 		target_link_libraries(mumble_client_object_lib PUBLIC Qt6::QWindowsIntegrationPlugin)
 	endif()
 
+	if(static AND TARGET Qt6::QOffscreenIntegrationPlugin)
+		include_qt_plugin(mumble_client_object_lib PRIVATE QOffscreenIntegrationPlugin)
+		target_link_libraries(mumble_client_object_lib PUBLIC Qt6::QOffscreenIntegrationPlugin)
+	endif()
+
 	add_subdirectory("${3RDPARTY_DIR}/SPSCQueue" "${CMAKE_CURRENT_BINARY_DIR}/SPSCQueue" EXCLUDE_FROM_ALL)
 	add_subdirectory("${3RDPARTY_DIR}/xinputcheck-build" "${CMAKE_CURRENT_BINARY_DIR}/xinputcheck" EXCLUDE_FROM_ALL)
 
